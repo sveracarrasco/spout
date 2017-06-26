@@ -5,6 +5,10 @@ namespace Box\Spout\Writer;
 use Box\Spout\Common\Exception\UnsupportedTypeException;
 use Box\Spout\Common\Helper\GlobalFunctionsHelper;
 use Box\Spout\Common\Type;
+use Box\Spout\Writer\Common\Creator\EntityFactory;
+use Box\Spout\Writer\Common\Creator\ManagerFactory;
+use Box\Spout\Writer\Common\Creator\Style\StyleBuilder;
+use Box\Spout\Writer\Common\Manager\Style\StyleMerger;
 
 /**
  * Class WriterFactory
@@ -25,24 +29,56 @@ class WriterFactory
      */
     public static function create($writerType)
     {
-        $writer = null;
-
         switch ($writerType) {
-            case Type::CSV:
-                $writer = new CSV\Writer();
-                break;
-            case Type::XLSX:
-                $writer = new XLSX\Writer();
-                break;
-            case Type::ODS:
-                $writer = new ODS\Writer();
-                break;
+            case Type::CSV: return self::getCSVWriter();
+            case Type::XLSX: return self::getXLSXWriter();
+            case Type::ODS: return self::getODSWriter();
             default:
                 throw new UnsupportedTypeException('No writers supporting the given type: ' . $writerType);
         }
+    }
 
-        $writer->setGlobalFunctionsHelper(new GlobalFunctionsHelper());
+    /**
+     * @return CSV\Writer
+     */
+    private static function getCSVWriter()
+    {
+        $optionsManager = new CSV\Manager\OptionsManager();
+        $styleMerger = new StyleMerger();
+        $globalFunctionsHelper = new GlobalFunctionsHelper();
 
-        return $writer;
+        return new CSV\Writer($optionsManager, $styleMerger, $globalFunctionsHelper);
+    }
+
+    /**
+     * @return XLSX\Writer
+     */
+    private static function getXLSXWriter()
+    {
+        $styleBuilder = new StyleBuilder();
+        $optionsManager = new XLSX\Manager\OptionsManager($styleBuilder);
+        $styleMerger = new StyleMerger();
+        $globalFunctionsHelper = new GlobalFunctionsHelper();
+
+        $entityFactory = new EntityFactory(new ManagerFactory());
+        $internalFactory = new XLSX\Creator\InternalFactory($entityFactory);
+
+        return new XLSX\Writer($optionsManager, $styleMerger, $globalFunctionsHelper, $internalFactory);
+    }
+
+    /**
+     * @return ODS\Writer
+     */
+    private static function getODSWriter()
+    {
+        $styleBuilder = new StyleBuilder();
+        $optionsManager = new ODS\Manager\OptionsManager($styleBuilder);
+        $styleMerger = new StyleMerger();
+        $globalFunctionsHelper = new GlobalFunctionsHelper();
+
+        $entityFactory = new EntityFactory(new ManagerFactory());
+        $internalFactory = new ODS\Creator\InternalFactory($entityFactory);
+
+        return new ODS\Writer($optionsManager, $styleMerger, $globalFunctionsHelper, $internalFactory);
     }
 }
