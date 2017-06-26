@@ -128,7 +128,8 @@ class RowIterator implements IteratorInterface
     {
         $this->xmlReader->close();
 
-        if ($this->xmlReader->openFileInZip($this->filePath, $this->sheetDataXMLFilePath) === false) {
+        $sheetDataFilePath = 'zip://' . $this->filePath . '#' . $this->sheetDataXMLFilePath;
+        if ($this->xmlReader->open($sheetDataFilePath) === false) {
             throw new IOException("Could not open \"{$this->sheetDataXMLFilePath}\".");
         }
 
